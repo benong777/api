@@ -13,7 +13,7 @@ app.use(express.json());
 
 const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    console.log('authHeader: ', authHeader);
+    // console.log('authHeader: ', authHeader);
 
     if (authHeader) {
         //-- Get the token from the Authorization header (with the "Bearer" removed)
@@ -65,7 +65,7 @@ app.post('/login', async (req, res) => {
           //-- Generate an access token
           console.log('idUser: ', user.idUser);
           console.log('email: ', user.email);
-          const token = jsonwebtoken.sign({ id: user.idUser, email: user.email },
+          const token = jsonwebtoken.sign({ idUser: user.idUser, email: user.email },
             JWT_KEY);
             console.log('token: ', token);
             res.json({ jwt: token });
@@ -103,7 +103,7 @@ app.post('/register', async function(req, res) {
               );
               console.log(user.insertId);
               //-- Generate token (string)
-              const token = jsonwebtoken.sign({id: user.insertId, email: req.body.email}, JWT_KEY);
+              const token = jsonwebtoken.sign({idUser: user.insertId, email: req.body.email}, JWT_KEY);
               res.json(token);
           } catch (error) {
             console.log(error);
@@ -119,86 +119,92 @@ app.get('/product', async (req, res) => {
   const [data] = await global.db.query(`SELECT p.idProduct, p.pName, p.pDescription, b.brandName 
                                             FROM ProductsDB.Product p
                                             LEFT JOIN Brand b ON p.idBrand=b.idBrand`);
-  res.send({data});
+  res.send({ message: "GET products - success!",
+             data });
 });
 
 //-- GET Brands
 app.get('/brand', async (req, res) => {
   const { idBrand } = req.body;
-  console.log('idBrand: ', idBrand);
+  // console.log('idBrand: ', idBrand);
   const [data] = await global.db.query(`SELECT p.idProduct, p.pName, p.pDescription, b.brandName 
                                             FROM ProductsDB.Product p
                                             LEFT JOIN Brand b ON p.idBrand=b.idBrand
                                             WHERE p.idBrand=?`,
                                             [idBrand]);
-  res.send({data});
+  res.send({ message: "GET brand - success!", 
+             data });
 });
 
 //-- GET Category
 app.get('/category', async (req, res) => {
-  // const { idCategory } = req.body;
-  console.log('idCategory: ', idCategory);
+  const { idCategory } = req.body;
+  // console.log('idCategory: ', idCategory);
   const [data] = await global.db.query(`SELECT p.idProduct, p.pName, p.pDescription, c.nameCategory 
                                             FROM ProductsDB.Product p
                                             LEFT JOIN Category c ON p.idCategory=c.idCategory
                                             WHERE p.idCategory=?`,
                                             [idCategory]);
-  res.send({data});
+  res.send({ message: "GET category - success!",
+             data });
 });
 
 //-- GET Favorites
 app.get('/favorites', authenticateJWT, async (req, res) => {
   const user = req.user;
   console.log('idUser: ', user);
-  const [data] = await global.db.query(`SELECT p.idProduct, p.pName, p.pDescription, fav.idUser, fav.Notes 
+  const [data] = await global.db.query(`SELECT p.idProduct, p.pName, p.pDescription, fav.idUser, fav.notes 
                                             FROM ProductsDB.Product p
                                             LEFT JOIN Favorites fav ON p.idProduct=fav.idProduct
                                             WHERE fav.idUser=?`,
-                                            [user.id]);
-  res.send({data});
+                                            [user.idUser]);
+  res.send({ message: "GET favorites - success!",
+             data });
 });
 
 //-- DELETE Favorites
 app.delete('/favorites', authenticateJWT, async (req, res) => {
   const user = req.user;
   const { idProduct } = req.body;
-  console.log('idUser: ', user);
-  console.log('idProduct: ', idProduct);
+  // console.log('idUser: ', user);
   const [data] = await global.db.query(`DELETE FROM Favorites WHERE idUser=? AND idProduct=?`,
-                                        [user.id, idProduct]);
-  res.send({message: "Fav deleted!"});
+                                        [user.idUser, idProduct]);
+  res.send({ message: "Delete favorite item - success!",
+             data });
 });
 
 //-- ADD a Favorite
 app.post('/favorites', authenticateJWT, async function(req, res) {
     const user = req.user;
-    console.log("User: ", user);
-    const { idProduct, Notes } = req.body;
-    await global.db.query(`INSERT INTO Favorites(idUser, idProduct, Notes)
-                                          VALUES(?, ?, ?)`,
-                                    [
-                                      user.id,
-                                      idProduct,
-                                      Notes
-                                    ]
+    // console.log("User: ", user);
+    const { idProduct, notes } = req.body;
+    const [data] = await global.db.query(`INSERT INTO Favorites(idUser, idProduct, notes)
+                                                VALUES(?, ?, ?)`,
+                                          [
+                                            user.idUser,
+                                            idProduct,
+                                            notes
+                                          ]
     );
-    res.send( {message: "Favorite added!"});
+    res.send({ message: "ADD favorite - success!",
+               data });
 });
 
 //-- UPDATE a Favorite
 app.put('/favorites', authenticateJWT, async function(req, res) {
     const user = req.user;
     console.log("User: ", user);
-    const { idProduct, Notes } = req.body;
-    await global.db.query(`UPDATE Favorites SET Notes = ?
+    const { idProduct, notes } = req.body;
+    const [data] = await global.db.query(`UPDATE Favorites SET notes = ?
                                   WHERE idUser=? AND idProduct=?`, 
                                   [ 
-                                    Notes, 
-                                    user.id,
+                                    notes, 
+                                    user.idUser,
                                     idProduct,
                                   ]
     );
-    res.send( {message: "Favorite item has been updated!"} );
+    res.send({ message: "Update favorite item - success!",
+               data });
 });
 
 
