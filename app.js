@@ -43,6 +43,7 @@ app.use(async (req, res, next) => {
 
     global.db.query(`SET time_zone = '-8:00'`);
     await next();
+    global.db.release();
 });
 
 //-- LOGIN
