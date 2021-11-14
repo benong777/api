@@ -81,7 +81,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
-
+//-- REGISTER
 app.post('/register', async function(req, res) {
     // Generate salt
     bcrypt.genSalt(12, (err, salt) => {
